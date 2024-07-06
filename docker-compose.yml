@@ -1,0 +1,80 @@
+version: '3.8'
+services:
+  admin-ui:
+    build: ./ui/admin-ui
+    ports:
+      - "5000:3500"
+    environment:
+    - DAPR_HTTP_PORT=3501
+    networks:
+      - my-network
+  
+  admin-ui-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+        "-app-port", "5000",
+        "-app-id", "admin-ui",
+        "-app-protocol", "http",
+        "-dapr-http-port", "3500",
+        "-components-path", "/dapr/components",
+        "-config", "/dapr/config.yaml"
+        ]
+    volumes:
+      - "./dapr/:/dapr"
+    depends_on:
+      - admin-ui
+    network_mode: "service:admin-ui"
+  news-manager:
+    build: ./managers/news-manager
+    ports:
+      - "5001:3501"
+    environment:
+      - DAPR_HTTP_PORT=3502
+    networks:
+      - my-network
+  
+  news-manager-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+        "-app-port", "5001",
+        "-app-id", "news-manager",
+        "-app-protocol", "http",
+        "-dapr-http-port", "3501",
+        "-components-path", "/dapr/components",
+        "-config", "/dapr/config.yaml"
+        ]
+    volumes:
+      - "./dapr/:/dapr"
+    depends_on:
+      - news-manager
+    network_mode: "service:news-manager"
+  news-service:
+    build: ./accessors/news-service
+    ports:
+      - "5002:3502"
+    environment:
+      - DAPR_HTTP_PORT=3501
+    env_file:
+      - .env
+    networks:
+      - my-network
+  
+  news-service-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+        "-app-port", "5002",
+        "-app-id", "news-service",
+        "-app-protocol", "http",
+        "-dapr-http-port", "3502",
+        "-components-path", "/dapr/components",
+        "-config", "/dapr/config.yaml"
+        ]
+    volumes:
+      - "./dapr/:/dapr"
+    depends_on:
+      - news-service
+    network_mode: "service:news-service"
+
+networks:
+  my-network:
+    driver: bridge
