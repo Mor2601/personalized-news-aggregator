@@ -75,6 +75,9 @@ target/
 .venv/
 venv/
 
+# Exclude MongoDB data directory
+mongo-data/
+
 # PyCharm
 .idea
 
