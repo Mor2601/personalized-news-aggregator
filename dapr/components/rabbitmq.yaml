@@ -1,0 +1,24 @@
+# apiVersion: dapr.io/v1alpha1
+# kind: Component
+# metadata:
+#   name: rabbitmq
+# spec:
+#   type: bindings.rabbitmq
+#   version: v1
+#   metadata:
+#     - name: host
+#       value: "amqp://rabbitmq:5672"
+#     - name: queueName
+#       value: publish #queueName!!!!!!
+#     - name: durable
+#       value: "false"  # Ensure boolean values are quoted strings
+#     - name: deleteWhenUnused
+#       value: "true"   # Ensure boolean values are quoted strings
+#     - name: ttlInSeconds
+#       value: "5"      # Ensure numeric values are quoted strings
+#     - name: prefetchCount
+#       value: "3"      # Ensure numeric values are quoted strings
+#     - name: exclusive
+#       value: "false"  # Ensure boolean values are quoted strings
+#     - name: maxPriority
+#       value: "5"      # Ensure numeric values are quoted strings

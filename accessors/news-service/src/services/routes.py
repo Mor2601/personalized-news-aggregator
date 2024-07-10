@@ -1,4 +1,4 @@
-from flask import Flask,jsonify,Blueprint
+from flask import Flask,jsonify,Blueprint,request
 import requests
 import logging
 import os
@@ -98,6 +98,24 @@ def get_new_ai():
         else:
             logging.error(f"Error: Unexpected status code {response.status_code}.")
             return jsonify({"error": f"Error: Unexpected status code {response.status_code}"}), response.status_code
+    except Exception as e:
+        logging.error(f"An error occurred: {str(e)}")
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+@news_api.route('/publish', methods=['POST'])
+def rabbitmq():
+    incoming_message = request.get_json()
+    logging.info(f"Message received: {incoming_message}")
+    
+    try:
+        # Assuming incoming_message is a dictionary that contains the news data
+        if 'news_data' in incoming_message:
+            news_data = incoming_message['news_data']
+            logging.info("News data retrieved successfully.")
+            return jsonify({"status": "success", "data": news_data}), 200
+        else:
+            logging.error("Bad Request: Missing news_data.")
+            return jsonify({"error": "Bad Request: Missing news_data."}), 400
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}")
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500

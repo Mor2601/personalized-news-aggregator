@@ -1,18 +1,20 @@
 version: '3.8'
 services:
-
-############################################
-######Admin UI Service######################
-############################################
+  ############################################
+  ######Admin UI Service######################
+  ############################################
   admin-ui:
     build: ./ui/admin-ui
     ports:
       - "5000:3500"
     environment:
-    - DAPR_HTTP_PORT=3501
+      - DAPR_HTTP_PORT=3501
     networks:
       - my-network
-  
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
   admin-ui-dapr:
     image: "daprio/daprd:edge"
     command: ["./daprd",
@@ -27,9 +29,8 @@ services:
       - "./dapr/:/dapr"
     depends_on:
       - admin-ui
+      - rabbitmq
     network_mode: "service:admin-ui"
-
-  
 
   ############################################
   ######News Manager Service##################
@@ -42,6 +43,9 @@ services:
       - DAPR_HTTP_PORT=3502
     networks:
       - my-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
   
   news-manager-dapr:
     image: "daprio/daprd:edge"
@@ -55,9 +59,11 @@ services:
         ]
     volumes:
       - "./dapr/:/dapr"
-    depends_on:
-      - news-manager
+    depends_on: 
+      rabbitmq:
+        condition: service_healthy
     network_mode: "service:news-manager"
+
   ############################################
   ######News Service##########################
   ############################################
@@ -71,6 +77,9 @@ services:
       - .env
     networks:
       - my-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
   
   news-service-dapr:
     image: "daprio/daprd:edge"
@@ -85,20 +94,25 @@ services:
     volumes:
       - "./dapr/:/dapr"
     depends_on:
-      - news-service
+      rabbitmq:
+        condition: service_healthy
     network_mode: "service:news-service"
 
   ################################################
-  ######customer UI Service#######################
+  ######Customer UI Service#######################
   ################################################
   customer-ui:
     build: ./ui/customer-ui
     ports:
       - "5003:3503"
     environment:
-    - DAPR_HTTP_PORT=3504
+      - DAPR_HTTP_PORT=3504
     networks:
       - my-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
   customer-ui-dapr:
     image: "daprio/daprd:edge"
     command: ["./daprd",
@@ -113,10 +127,11 @@ services:
       - "./dapr/:/dapr"
     depends_on:
       - customer-ui
+      - rabbitmq
     network_mode: "service:customer-ui"
 
   ################################################
-  ######customer Service##########################
+  ######Customer Service##########################
   ################################################
   customer-service:
     build: ./customer/customer-service
@@ -124,10 +139,15 @@ services:
       - "5004:3504"
     environment:
       - DAPR_HTTP_PORT=3505
+      - DAPR_HTTP_PORT2=3507
     env_file:
       - .env
     networks:
       - my-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
   customer-service-dapr:
     image: "daprio/daprd:edge"
     command: ["./daprd",
@@ -142,7 +162,9 @@ services:
       - "./dapr/:/dapr"
     depends_on:
       - customer-service
+      - rabbitmq
     network_mode: "service:customer-service"
+
   ################################################
   ######User Manager Service#####################
   ################################################
@@ -154,6 +176,10 @@ services:
       - DAPR_HTTP_PORT=3506
     networks:
       - my-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
   user-manager-dapr:
     image: "daprio/daprd:edge"
     command: ["./daprd",
@@ -168,7 +194,9 @@ services:
       - "./dapr/:/dapr"
     depends_on:
       - user-manager
+      - rabbitmq
     network_mode: "service:user-manager"
+
   ################################################
   ######User Service##############################
   ################################################
@@ -182,6 +210,10 @@ services:
       - .env
     networks:
       - my-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
   user-service-dapr:
     image: "daprio/daprd:edge"
     command: ["./daprd",
@@ -196,7 +228,72 @@ services:
       - "./dapr/:/dapr"
     depends_on:
       - user-service
+      - rabbitmq
     network_mode: "service:user-service"
+
+  ################################################
+  ######Notification Manager Service#############
+  ################################################
+  notification-manager:
+    build: ./managers/notification-manager
+    ports:
+      - "5007:3507"
+    environment:
+      - DAPR_HTTP_PORT=3508
+    networks:
+      - my-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+  notification-manager-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+        "-app-port", "5007",
+        "-app-id", "notification-manager",
+        "-app-protocol", "http",
+        "-dapr-http-port", "3507",
+        "-components-path", "/dapr/components",
+        "-config", "/dapr/config.yaml"
+        ]
+    volumes:
+      - "./dapr/:/dapr"
+    depends_on:
+      - notification-manager
+      - rabbitmq
+    network_mode: "service:notification-manager"
+  
+  ################################################
+  ######Notification Service######################
+  ################################################
+  notification-service:
+    build: ./accessors/notification-service
+    ports:
+      - "5008:3508"
+    environment:
+      - DAPR_HTTP_PORT=3507
+    env_file:
+      - .env
+    networks:
+      - my-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+  notification-service-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+        "-app-port", "5008",
+        "-app-id", "notification-service",
+        "-app-protocol", "http",
+        "-dapr-http-port", "3508",
+        "-components-path", "/dapr/components",
+        "-config", "/dapr/config.yaml"
+        ]
+    volumes:
+      - "./dapr/:/dapr"
+    depends_on:
+      - notification-service
+      - rabbitmq
+    network_mode: "service:notification-service"
 
   ################################################
   ######MongoDB Service###########################
@@ -209,8 +306,25 @@ services:
       - .env
     networks:
       - my-network
-  
 
+  ###########################################
+  ######RabbitMQ Service#####################
+  ###########################################
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672" # Management interface
+      - "5672:5672"   # RabbitMQ service
+    networks:
+      - my-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  
 networks:
   my-network:
     driver: bridge
