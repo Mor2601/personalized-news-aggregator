@@ -8,6 +8,7 @@ from models.repositories.data_queries import get_all_notifications
 from models.ai.news_ai import get_new_ai_for_preference
 import pika
 from pika.exchange_type import ExchangeType
+import functools
 load_dotenv()
 news_api = Blueprint('news_api', __name__)
 
@@ -75,4 +76,4 @@ def send_message_to_users(ai_response):
         return response
     except pika.exceptions.AMQPError as err:
         return jsonify({'error': f'Error sending message: {err}'}), 500
-  
+

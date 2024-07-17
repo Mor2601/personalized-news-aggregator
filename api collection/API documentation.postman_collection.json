@@ -1,0 +1,185 @@
+{
+	"info": {
+		"_postman_id": "3a3ad1ef-e474-4f92-b87b-bcd1b0537da6",
+		"name": "API documentation",
+		"description": "StartFragment\n\n## Cusomer Registration and Preferences\n\n### Register User\n\nRegisters a new customer with preferences for news categories and technology updates.\n\n- **Method:** POST\n    \n- **Endpoint:** `{{customer_ui_url}}/set-customer-preferences`\n    \n\n**Request Body:**\n\n``` json\n{\n    \"_id\":\"<user email>\",\n    \"preferences\":[<\"preferences>\"]\n}\n\n ```\n\n**Responses:**\n\n``` json\njsonCopy code{\n\"status\":200,\n\"data\":\"customer preferences forwarded successfully.\"\n}\n\n ```\n\nThis endpoint allows customers to register with their desired username, email, and preferences for news categories and technology updates.\n\nEndFragment\n\n---\n\nStartFragment\n\n### Update Customer Preferences\n\nUpdates the preferences for an existing customer .\n\n- **Method:** PUT\n    \n- **Endpoint:** `{{customer_ui_url}}/`update-customer-preferences\n    \n\n**Request Body:**\n\n``` json\n{\n    \"_id\":\"<user email>\",\n    \"preferences\":[<\"preferences>\"]\n}\n\n ```\n\n**Responses:**\n\n``` json\n{\n  \"status\":200,\n  \"data\":\"customer preferences forwarded successfully.\"\n}\n\n ```\n\nThis endpoint allows customers to update their preferences by specifying the `userId` and the new set of preferences they wish to apply.\n\nEndFragment\n\nStartFragment\n\n### Delete Customer Preferences\n\nDeletes the preferences for an existing user.\n\n- **Method:** DELETE\n    \n- **Endpoint:** `{{customer_ui_url}}/`StartFragmentremove-customer-preferences\n    \n\nEndFragment\n\n**Request Body:**\n\n``` json\n{\n      \"_id\":\"<user email>\",\n    \"preferences\":[<\"preferences>\"]\n}\n\n ```\n\n**Responses:**\n\n``` json\n{\n  \"status\":200,\n  \"data\":\"customer preferences removed successfully.\"\n}\n\n ```\n\nThis endpoint allows customers to delete their preferences by providing the `userId` associated with their account.\n\nEndFragment\n\nStartFragment\n\n## News Aggregation\n\n### Get Latest News\n\nFetches the latest news based on the customer preferences and send email with latest news.\n\n- **Method:** GET\n    \n- **Endpoint:** `{{admin_ui_url}}/`get-news\n    \n\n**Responses:**\n\n``` json\n{\n   \"data\": \"Message sent successfully\",\n   \"status\": 200\n}\n\n ```\n\nThis endpoint send the latest news articles based on the customer stored preferences. Each news item includes a title, URL link to read more about the article and a brief summerize for each article.\n\nEndFragment",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25438477"
+	},
+	"item": [
+		{
+			"name": "Cusomer Registration and Preferences",
+			"item": [
+				{
+					"name": "register customer",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"_id\":\"morbh1090@gmail.com\",\r\n    \"preferences\":[\"sport\",\"AI\",\"NBA\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{customer_ui_url}}/set-customer-preferences",
+							"host": [
+								"{{customer_ui_url}}"
+							],
+							"path": [
+								"set-customer-preferences"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update customer prefernces",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"_id\":\"fakeema12353i@fake.com\",\r\n    \"preferences\":[\"sport\",\"AI\",\"NBA\",\"REACT\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5003/v1.0/invoke/customer-ui/method/update-customer-preferences",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5003",
+							"path": [
+								"v1.0",
+								"invoke",
+								"customer-ui",
+								"method",
+								"update-customer-preferences"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "remove customer prefernces",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"_id\":\"dakeemdai11l@ddl.com\",\r\n    \"preferences\":[\"NBA\"]\r\n\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:5003/v1.0/invoke/customer-ui/method/remove-customer-preferences",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5003",
+							"path": [
+								"v1.0",
+								"invoke",
+								"customer-ui",
+								"method",
+								"remove-customer-preferences"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "The `/me` endpoints let you manage information about the authenticated user."
+		},
+		{
+			"name": "Get Latest News",
+			"item": [
+				{
+					"name": "Send News For Customer To Email",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{admin_ui_url}}/get-news",
+							"host": [
+								"{{admin_ui_url}}"
+							],
+							"path": [
+								"get-news"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "key",
+				"value": "X-API-Key",
+				"type": "string"
+			},
+			{
+				"key": "value",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://farming-simulator.pstmn.io"
+		},
+		{
+			"key": "customer_ui_url",
+			"value": "http://localhost:5003/v1.0/invoke/customer-ui/method",
+			"type": "string"
+		},
+		{
+			"key": "userId ",
+			"value": "personal email",
+			"type": "string"
+		},
+		{
+			"value": "",
+			"type": "string",
+			"disabled": true
+		}
+	]
+}

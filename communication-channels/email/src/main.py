@@ -32,6 +32,7 @@ def gmail_send_message(preference, sender_email,response):
             
             
 def on_message_received(ch, method, properties, body): 
+    logging.info(ch.basic_ack(delivery_tag=method.delivery_tag))
     logging.info(f'Processing message: {body.decode("utf-8")}') 
     data_str = body.decode("utf-8")
     try:
@@ -47,7 +48,6 @@ def on_message_received(ch, method, properties, body):
         gmail_send_message(preference, email_sender,response)
     logging.info('Message processed successfully')
     logging.info(method.delivery_tag)
-    logging.info(ch.basic_ack(delivery_tag=method.delivery_tag))
     
 def gmail_consumers(on_message_received):
     connection_parameters = pika.ConnectionParameters('rabbitmq')
@@ -62,10 +62,10 @@ def gmail_consumers(on_message_received):
 
     channel.queue_bind(exchange='topic', queue=queue.method.queue, routing_key='gmail.#')
 
-    channel.basic_consume(queue=queue.method.queue, auto_ack=True,
+    channel.basic_consume(queue=queue.method.queue,
     on_message_callback=on_message_received)
 
-    logging.info('Payments Starting Consuming')
+    logging.info('Starting Consuming')
 
     channel.start_consuming()
 

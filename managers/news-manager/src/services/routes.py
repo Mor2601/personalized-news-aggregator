@@ -3,9 +3,10 @@ from flask import Flask, jsonify,Blueprint
 import requests
 import logging
 import os
+
 news_api = Blueprint('news_api', __name__)
 
-@news_api.route('/get-news')
+@news_api.route('/get-news', methods=['GET'])
 def get_news():
     """
     Retrieves news data from the news-service API.
@@ -42,4 +43,3 @@ def get_news():
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}")
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-    
