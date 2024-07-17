@@ -24,7 +24,7 @@ def get_new():
         return jsonify({"error": f"Failed to retrieve news data, status code: {response.status_code}"}), response.status_code
     responses.append(response.json())
     page_url = response.json().get('nextPage')
-    for _ in range(1, 2):
+    for _ in range(1, 50):
         page_url = f"https://newsdata.io/api/1/latest?apikey={api_key}&page={page_url}"
         response = requests.get(page_url)
         if response.status_code != 200:
