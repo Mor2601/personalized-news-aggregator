@@ -49,7 +49,7 @@ The project aims to develop a microservice-based application that aggregates new
    ```bash
    docker-compose up --build
    ```
-
+   
 4. **Access the services and test endpoints:**
    - Use Postman collection provided in the repository to test the API endpoints.
 
