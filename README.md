@@ -36,7 +36,7 @@ The project aims to develop a microservice-based application that aggregates new
 - AI is used to select the most interesting news and optionally generate concise summaries.
 
 ## Running the Application
-
+```
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/Mor2601/personalized-news-aggregator.git
