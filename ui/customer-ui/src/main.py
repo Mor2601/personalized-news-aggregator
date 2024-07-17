@@ -33,7 +33,7 @@ def set_customer_preferences():
         # Check if the request was successful
         if response.status_code == 200:
             logging.info('customer preferences forwarded successfully.')
-            return jsonify({"status": response.status_code, "data": response.json()}), response.status_code
+            return jsonify(response.json())
         else:
             logging.error('Failed to forward customer preferences.')
             return jsonify({"error": "Failed to forward customer preferences"}), response.status_code
@@ -69,7 +69,7 @@ def update_customer_preferences():
         # Check if the request was successful
         if response.status_code == 200:
             logging.info('customer preferences updated successfully.')
-            return jsonify({"status": response.status_code, "data": response.json()}), response.status_code
+            return jsonify({"status": response.status_code, "data": response.json()})
         else:
             logging.error('Failed to update customer preferences.')
             return jsonify({"error": "Failed to update customer preferences"}), response.status_code
@@ -105,7 +105,7 @@ def remove_customer_preferences():
         # Check if the request was successful
         if response.status_code == 200:
             logging.info('customer preferences removed successfully.')
-            return jsonify({"status": response.status_code, "data": response.json()}), response.status_code
+            return jsonify({"status": response.status_code, "data": response.json()})
         else:
             logging.error('Failed to remove customer preferences.')
             return jsonify({"error": "Failed to remove customer preferences"}), response.status_code

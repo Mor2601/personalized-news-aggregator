@@ -1,4 +1,4 @@
-from flask import Flask, jsonify,Blueprint 
+from flask import Flask  
 import requests
 import logging
 from services.routes import news_api

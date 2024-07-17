@@ -1,121 +1,78 @@
-from flask import Flask,jsonify,Blueprint,request
+from flask import Flask,jsonify,Blueprint,request,current_app 
 import requests
 import logging
 import os
 from dotenv import load_dotenv
+import json
+from models.repositories.data_queries import get_all_notifications
+from models.ai.news_ai import get_new_ai_for_preference
+import pika
+from pika.exchange_type import ExchangeType
 load_dotenv()
 news_api = Blueprint('news_api', __name__)
 
-"""
-Install the Google AI Python SDK
-
-$ pip install google-generativeai
-
-See the getting started guide for more information:
-https://ai.google.dev/gemini-api/docs/get-started/python
-"""
-
-
-
-import google.generativeai as genai
-
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-
-# Create the model
-# See https://ai.google.dev/api/python/google/generativeai/GenerativeModel
-generation_config = {
-  "temperature": 1,
-  "top_p": 0.95,
-  "top_k": 64,
-  "max_output_tokens": 8192,
-  "response_mime_type": "text/plain",
-}
-
-model = genai.GenerativeModel(
-  model_name="gemini-1.5-flash",
-  generation_config=generation_config,
-  # safety_settings = Adjust safety settings
-  # See https://ai.google.dev/gemini-api/docs/safety-settings
-)
-
-
-
-
-
 @news_api.route('/get-news',methods=['GET'])
 def get_new():
-    dapr_port = os.getenv('DAPR_HTTP_PORT', 3500)
-    api_key = os.getenv('NEWS_API_KEY')
-    logging.info(f"api_key: {api_key}")
-    url=f"https://newsdata.io/api/1/news?apikey={api_key}"
-    response = requests.get(url)
-    
-    try:
-        if response.status_code == 200:
-            news_data = response.json()
-            logging.info("News data retrieved successfully.")
-            return jsonify({"status": response.status_code, "data": news_data})
-        elif response.status_code == 400:
-            logging.error("Bad Request: Invalid parameters.")
-            return jsonify({"error": "Bad Request: Invalid parameters."}), 400
-        elif response.status_code == 500:
-            logging.error("Internal Server Error: Something went wrong on the server.")
-            return jsonify({"error": "Internal Server Error: Something went wrong on the server."}), 500
-        else:
-            logging.error(f"Error: Unexpected status code {response.status_code}.")
-            return jsonify({"error": f"Error: Unexpected status code {response.status_code}"}), response.status_code
-    except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-    
-    
-@news_api.route('/get-new-ai',methods=['GET'])
-def get_new_ai():
-    dapr_port = os.getenv('DAPR_HTTP_PORT', 3500)
     api_key = os.getenv('NEWS_API_KEY')
     
-    logging.info(f"api_key: {api_key}")
-    url=f"https://newsdata.io/api/1/news?apikey={api_key}"
+    url = f"https://newsdata.io/api/1/latest?apikey={api_key}"
+    responses = []
     response = requests.get(url)
-    news_data_str = response.json()
-    SPORT = "Football, New Technology, and AI"
-    prompt = f"Please provide the most interesting news articles about {SPORT} from this data:\n{news_data_str}\nProvide a concise summary based on the available information, including the articles titles and description dont omit nothig from the reposne."
-    chat_session = model.start_chat(history=[])
-
-    response = chat_session.send_message(prompt)
-    return jsonify({"status":200, "data": response.text})
+    if response.status_code != 200:
+        logging.error(f"Failed to retrieve news data, status code: {response.status_code}")
+        return jsonify({"error": f"Failed to retrieve news data, status code: {response.status_code}"}), response.status_code
+    responses.append(response.json())
+    page_url = response.json().get('nextPage')
+    for _ in range(1, 2):
+        page_url = f"https://newsdata.io/api/1/latest?apikey={api_key}&page={page_url}"
+        response = requests.get(page_url)
+        if response.status_code != 200:
+            logging.error(f"Failed to retrieve news data, status code: {response.status_code}")
+            return jsonify({"error": f"Failed to retrieve news data, status code: {response.status_code}"}), response.status_code
+        page_url = response.json().get('nextPage')
+        responses.append(response)
+    logging.info(f"News data retrieved successfully. Total pages: {len(responses)}")
     try:
-        if response.status_code == 200:
-            news_data = response.json()
-            logging.info("News data retrieved successfully.")
-            return jsonify({"status": response.status_code, "data": news_data})
-        elif response.status_code == 400:
-            logging.error("Bad Request: Invalid parameters.")
-            return jsonify({"error": "Bad Request: Invalid parameters."}), 400
-        elif response.status_code == 500:
-            logging.error("Internal Server Error: Something went wrong on the server.")
-            return jsonify({"error": "Internal Server Error: Something went wrong on the server."}), 500
+        notification_preferences = get_all_notifications(current_app.collection)
+        notification_preferences_dict = json.loads(notification_preferences.data.decode('utf-8'))
+        notifications_array = notification_preferences_dict.get('notifications', [])
+        ai_response = get_new_ai_for_preference(notifications_array, response.json())
+        if ai_response.status_code == 200:
+            logging.info("AI responses generated successfully.")
+            queue_proccess_status=send_message_to_users(ai_response.data)
         else:
-            logging.error(f"Error: Unexpected status code {response.status_code}.")
-            return jsonify({"error": f"Error: Unexpected status code {response.status_code}"}), response.status_code
+            logging.error(f"Failed to generate AI responses, status code: {ai_response.status_code}")
+            return jsonify({"error": f"Failed to generate AI responses, status code: {ai_response.status_code}"})
+        if queue_proccess_status.status_code==200:
+            return jsonify({"status": 200, "data": "Message sent successfully"})
+        else:
+            return jsonify({"error": f"Failed to send message, status code: {queue_proccess_status}"}), queue_proccess_status
     except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
+        logging.error(f"An error occurred while generating AI responses: {str(e)}")
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
-@news_api.route('/publish', methods=['POST'])
-def rabbitmq():
-    incoming_message = request.get_json()
-    logging.info(f"Message received: {incoming_message}")
     
+
+
+
+
+def send_message_to_users(ai_response):
     try:
-        # Assuming incoming_message is a dictionary that contains the news data
-        if 'news_data' in incoming_message:
-            news_data = incoming_message['news_data']
-            logging.info("News data retrieved successfully.")
-            return jsonify({"status": "success", "data": news_data}), 200
-        else:
-            logging.error("Bad Request: Missing news_data.")
-            return jsonify({"error": "Bad Request: Missing news_data."}), 400
-    except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+        connection_parameters = pika.ConnectionParameters('rabbitmq')
+        connection = pika.BlockingConnection(connection_parameters)
+        channel = connection.channel()
+
+        channel.exchange_declare(exchange='topic', exchange_type=ExchangeType.topic)
+
+        # Enable publisher confirmations
+        channel.confirm_delivery()
+        channel.basic_publish(exchange='topic', routing_key='gmail.users', body=ai_response, mandatory=True)
+        
+       
+        response = jsonify({"status": 200, "data": "Message sent successfully"})
+        logging.info(f'Message sent successfully')
+        
+        connection.close()
+        return response
+    except pika.exceptions.AMQPError as err:
+        return jsonify({'error': f'Error sending message: {err}'}), 500
+  

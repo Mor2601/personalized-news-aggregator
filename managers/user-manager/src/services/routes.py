@@ -30,7 +30,7 @@ def set_customer_preferences():
         # Check if the request was successful
         if response.status_code == 200:
             logging.info('customer preferences forwarded successfully.')
-            return jsonify({"status": response.status_code, "data": response.json()})
+            return jsonify(response.json())
         else:
             logging.error('Failed to forward customer preferences.')
             return jsonify({"error": "Failed to forward customer preferences"}), response.status_code

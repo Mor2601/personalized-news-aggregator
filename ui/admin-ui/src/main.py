@@ -44,7 +44,7 @@ def get_news():
                 # Other status codes
                 # Handle the error
                 logging.error(f"Error: Unexpected status code {response.status_code}.")
-                return jsonify({"error": f"Error: Unexpected status code {response.status_code}"}), response.status_code
+                return jsonify({"error": f"Error: Unexpected status code {response.status_code}"})
 
         except Exception as e:
             # Handle any exceptions that occur during the request

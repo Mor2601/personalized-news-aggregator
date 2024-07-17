@@ -5,6 +5,7 @@ services:
   ############################################
   admin-ui:
     build: ./ui/admin-ui
+    container_name: admin-ui
     ports:
       - "5000:3500"
     environment:
@@ -17,6 +18,7 @@ services:
 
   admin-ui-dapr:
     image: "daprio/daprd:edge"
+    container_name: admin-ui-dapr
     command: ["./daprd",
         "-app-port", "5000",
         "-app-id", "admin-ui",
@@ -37,18 +39,23 @@ services:
   ############################################
   news-manager:
     build: ./managers/news-manager
+    container_name: news-manager
     ports:
       - "5001:3501"
+      # - "5009:5672"
     environment:
       - DAPR_HTTP_PORT=3502
+      # - DAPR_RABBITMQ_PORT=5672
     networks:
       - my-network
     depends_on:
       rabbitmq:
         condition: service_healthy
+      
   
   news-manager-dapr:
     image: "daprio/daprd:edge"
+    container_name: news-manager-dapr
     command: ["./daprd",
         "-app-port", "5001",
         "-app-id", "news-manager",
@@ -60,8 +67,8 @@ services:
     volumes:
       - "./dapr/:/dapr"
     depends_on: 
-      rabbitmq:
-        condition: service_healthy
+      - rabbitmq
+      - news-manager
     network_mode: "service:news-manager"
 
   ############################################
@@ -69,8 +76,10 @@ services:
   ############################################
   news-service:
     build: ./accessors/news-service
+    container_name: news-service
     ports:
       - "5002:3502"
+      # - "5010:5672"
     environment:
       - DAPR_HTTP_PORT=3501
     env_file:
@@ -80,9 +89,11 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    restart: on-failure   
   
   news-service-dapr:
     image: "daprio/daprd:edge"
+    container_name: news-service-dapr
     command: ["./daprd",
         "-app-port", "5002",
         "-app-id", "news-service",
@@ -94,8 +105,9 @@ services:
     volumes:
       - "./dapr/:/dapr"
     depends_on:
-      rabbitmq:
-        condition: service_healthy
+      - rabbitmq
+      - news-service
+        
     network_mode: "service:news-service"
 
   ################################################
@@ -103,6 +115,7 @@ services:
   ################################################
   customer-ui:
     build: ./ui/customer-ui
+    container_name: customer-ui
     ports:
       - "5003:3503"
     environment:
@@ -115,6 +128,7 @@ services:
 
   customer-ui-dapr:
     image: "daprio/daprd:edge"
+    container_name: customer-ui-dapr
     command: ["./daprd",
         "-app-port", "5003",
         "-app-id", "customer-ui",
@@ -135,6 +149,7 @@ services:
   ################################################
   customer-service:
     build: ./customer/customer-service
+    container_name: customer-service
     ports:
       - "5004:3504"
     environment:
@@ -150,6 +165,7 @@ services:
 
   customer-service-dapr:
     image: "daprio/daprd:edge"
+    container_name: customer-service-dapr
     command: ["./daprd",
         "-app-port", "5004",
         "-app-id", "customer-service",
@@ -170,6 +186,7 @@ services:
   ################################################
   user-manager:
     build: ./managers/user-manager
+    container_name: user-manager
     ports:
       - "5005:3505"
     environment:
@@ -182,6 +199,7 @@ services:
 
   user-manager-dapr:
     image: "daprio/daprd:edge"
+    container_name: user-manager-dapr
     command: ["./daprd",
         "-app-port", "5005",
         "-app-id", "user-manager",
@@ -202,6 +220,7 @@ services:
   ################################################
   user-service:
     build: ./accessors/user-service
+    container_name: user-service
     ports:
       - "5006:3506"
     environment:
@@ -216,6 +235,7 @@ services:
 
   user-service-dapr:
     image: "daprio/daprd:edge"
+    container_name: user-service-dapr
     command: ["./daprd",
         "-app-port", "5006",
         "-app-id", "user-service",
@@ -236,6 +256,7 @@ services:
   ################################################
   notification-manager:
     build: ./managers/notification-manager
+    container_name: notification-manager
     ports:
       - "5007:3507"
     environment:
@@ -247,6 +268,7 @@ services:
         condition: service_healthy
   notification-manager-dapr:
     image: "daprio/daprd:edge"
+    container_name: notification-manager-dapr
     command: ["./daprd",
         "-app-port", "5007",
         "-app-id", "notification-manager",
@@ -267,6 +289,7 @@ services:
   ################################################
   notification-service:
     build: ./accessors/notification-service
+    container_name: notification-service
     ports:
       - "5008:3508"
     environment:
@@ -280,6 +303,7 @@ services:
         condition: service_healthy
   notification-service-dapr:
     image: "daprio/daprd:edge"
+    container_name: notification-service-dapr
     command: ["./daprd",
         "-app-port", "5008",
         "-app-id", "notification-service",
@@ -294,6 +318,21 @@ services:
       - notification-service
       - rabbitmq
     network_mode: "service:notification-service"
+  
+  ################################################
+  ######Email Service############################
+  ################################################
+  email:
+    build: ./communication-channels/email
+    container_name: email
+    env_file:
+      - .env
+    networks:
+      - my-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy 
+    restart: on-failure   
 
   ################################################
   ######MongoDB Service###########################

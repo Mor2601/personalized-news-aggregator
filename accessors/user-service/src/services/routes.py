@@ -18,7 +18,7 @@ def set_customer_preferences():
         
          # Validate the received data
         result= add_new_data(current_app.collection, request)
-
+        logging.info(f'result is:{result}')
         # Check if the request was successful
         if result.acknowledged:
             logging.info('customer preferences forwarded successfully.')
